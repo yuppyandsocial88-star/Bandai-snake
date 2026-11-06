@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ยอดปัง บันไดงู</title>
+<link href="https://fonts.googleapis.com/css2?family=Mali:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#1b1f2e;--card:#252a3d;--line:#363d56;--text:#eef1fa;--muted:#a3abc4;--primary:#6c7ff2}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:'Mali',system-ui,sans-serif}
+header{background:linear-gradient(135deg,#7f7fd5,#86a8e7 50%,#91eae4);padding:22px 16px;text-align:center;text-shadow:0 2px 0 rgba(0,0,0,.2)}
+header h1{margin:0;font-size:1.9rem}
+header p{margin:6px 0 0;color:#fff;font-size:.95rem}
+.wrap{max-width:1280px;margin:0 auto;padding:16px;display:grid;gap:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:18px;min-width:0}
+.card h2{margin:0 0 14px;font-size:1.25rem}
+.grid2{display:grid;grid-template-columns:1.6fr 1fr;gap:16px}
+@media(max-width:900px){.grid2{grid-template-columns:1fr}}
+.leader{text-align:center;font-size:1.35rem;font-weight:700}
+.stats{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:12px}
+.pill{background:#1d2234;border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-size:.88rem;color:var(--muted)}
+.pill b{color:var(--text)}
+
+/* ---------- Cute board ---------- */
+.board-frame{background:#fff8e7;border:7px solid #ffd166;border-radius:26px;padding:8px;box-shadow:0 7px 0 #d9a21b,0 16px 30px rgba(0,0,0,.45)}
+.board-frame.shake{animation:shake .55s}
+@keyframes shake{20%,60%{transform:translateX(-8px) rotate(-.6deg)}40%,80%{transform:translateX(8px) rotate(.6deg)}}
+.board-wrap{position:relative}
+.board{display:grid;grid-template-columns:repeat(10,1fr)}
+.cell{position:relative;aspect-ratio:1/1;container-type:inline-size}
+.tile{position:absolute;inset:2px;border-radius:24%;background-color:var(--bg);border:2px solid rgba(140,95,50,.14);box-shadow:inset 0 -4px 0 rgba(0,0,0,.08),inset 0 3px 0 rgba(255,255,255,.65)}
+.tile.lt{background-image:linear-gradient(rgba(255,255,255,.5),rgba(255,255,255,.5))}
+.tile.finish{background:radial-gradient(circle at 50% 35%,#fff6b0,#ffc93c 60%,#f59f00);border-color:#e08e00}
+.num{position:absolute;top:7%;left:10%;font-size:.65rem;font-size:19cqw;font-weight:700;color:#8a6a50;line-height:1}
+.finish .num{color:#7a4a00}
+.deco{position:absolute;inset:0;display:grid;place-items:center;font-size:1.3rem;font-size:46cqw;padding-top:10%}
+#overlay{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2;overflow:visible;opacity:.95}
+.tokens{position:absolute;inset:0;z-index:3;display:flex;flex-wrap:wrap;gap:2%;justify-content:center;align-content:center;padding:8%}
+.tok{width:28px;height:28px;width:calc(var(--k,.5)*100cqw);height:calc(var(--k,.5)*100cqw);border-radius:50%;background:#fff;border:2px solid var(--c);display:grid;place-items:center;font-size:16px;font-size:calc(var(--k,.5)*58cqw);line-height:1;box-shadow:0 3px 0 rgba(0,0,0,.28)}
+.tok.moving{animation:hop .3s}
+@keyframes hop{50%{transform:translateY(-35%) scale(1.25)}}
+.start{margin-top:14px;padding:10px 14px;background:#fff8e7;color:#7a5c45;border-radius:16px;font-size:.95rem;font-weight:600;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.start .tok{width:40px;height:40px;font-size:24px;border-width:3px}
+.legend{margin-top:10px;font-size:.82rem;display:flex;gap:8px;flex-wrap:wrap}
+.legend span{background:#fff8e7;color:#7a5c45;border-radius:999px;padding:4px 12px;font-weight:600}
+.confetti{position:fixed;top:-50px;z-index:70;pointer-events:none;animation:fall 2.2s ease-in forwards}
+@keyframes fall{to{transform:translateY(115vh) rotate(600deg)}}
+
+/* ---------- Ranking ---------- */
+.rcard{border-radius:18px;padding:12px 14px;color:#14171f;display:grid;grid-template-columns:1fr auto;gap:6px 10px;align-items:center;margin-bottom:10px;box-shadow:0 4px 0 rgba(0,0,0,.25)}
+.rname{font-weight:700;font-size:1.05rem}
+.rpos{font-weight:700;font-size:1.25rem;text-align:right}
+.rsub{font-size:.8rem;grid-column:1/-1;opacity:.9}
+.bar{grid-column:1/-1;height:8px;background:rgba(0,0,0,.2);border-radius:9px;overflow:hidden}
+.bar i{display:block;height:100%;background:rgba(0,0,0,.6);transition:width .4s}
+.rcard .btn{grid-column:1/-1;background:#14171f;color:#fff;padding:9px}
+
+/* ---------- Forms ---------- */
+input,select{background:#171b29;border:1px solid var(--line);color:var(--text);border-radius:14px;padding:12px;font:inherit;width:100%;min-width:0}
+.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+label{display:grid;gap:6px;font-size:.85rem;color:var(--muted)}
+.btn{background:var(--primary);color:#fff;border:0;border-radius:14px;padding:12px 16px;font:inherit;font-weight:700;cursor:pointer;box-shadow:0 3px 0 rgba(0,0,0,.25)}
+.btn:active{transform:translateY(2px);box-shadow:none}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--muted);padding:6px 12px;font-weight:400;box-shadow:none}
+.btn.danger{background:#d9534f}
+.btn.gold{background:linear-gradient(135deg,#ffd166,#ff8a5c);color:#1b1b1b}
+.list{max-height:380px;overflow:auto}
+.item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.dot{width:12px;height:12px;border-radius:50%;flex:none}
+.grow{flex:1;min-width:0}
+.small{color:var(--muted);font-size:.82rem}
+.player-row{display:grid;grid-template-columns:76px 1fr 54px auto;gap:8px;margin-bottom:8px;align-items:center}
+input[type=color]{padding:4px;height:46px}
+.btns{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+details summary{cursor:pointer;font-weight:700;font-size:1.1rem}
+
+/* ---------- Modal & toast ---------- */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;z-index:50;padding:16px}
+.modal.show{display:flex}
+.modal-box{background:#fff8e7;color:#5a4030;border:6px solid #ffd166;border-radius:28px;padding:28px;text-align:center;width:min(380px,100%)}
+.modal-box .small{color:#8a6a50}
+.modal-box .btn.ghost{color:#8a6a50;border-color:#e6cfa8}
+.dice{width:110px;height:110px;margin:22px auto;background:#fff;border:3px solid #e6cfa8;border-radius:24px;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);padding:14px;box-shadow:0 6px 0 #e6cfa8}
+.dice span{width:20px;height:20px;border-radius:50%;margin:auto}
+.dice span.on{background:#ff6b8b}
+.dice.spin{animation:spin .35s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#mResult{font-size:1.35rem;font-weight:700;min-height:1.6em;color:#e07a00}
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,200%);background:#fff8e7;color:#5a4030;border:3px solid #ffd166;padding:14px 20px;border-radius:18px;z-index:60;transition:.3s;max-width:92vw;text-align:center;font-weight:600;box-shadow:0 8px 30px rgba(0,0,0,.5)}
+.toast.show{transform:translate(-50%,0)}
+</style>
+</head>
+<body>
+<header><h1 id="title"></h1><p id="subtitle"></p></header>
+
+<div class="wrap">
+  <section class="card"><div class="leader" id="leader"></div><div class="stats" id="stats"></div></section>
+
+  <div class="grid2">
+    <section class="card" id="boardCard">
+      <h2>🌈 กระดานบันไดงู</h2>
+      <div class="board-frame" id="boardFrame">
+        <div class="board-wrap">
+          <div class="board" id="board"></div>
+          <svg id="overlay" viewBox="0 0 1000 1000"></svg>
+        </div>
+      </div>
+      <div class="start" id="startArea"></div>
+      <div class="legend"><span>🪜 บันได = ไต่ขึ้น</span><span>🐍 หัวงู = ไถลลงหาง</span><span>👑 เส้นชัย</span></div>
+    </section>
+    <section class="card">
+      <h2>🏆 อันดับ & สิทธิ์ทอย</h2>
+      <div id="ranking"></div>
+    </section>
+  </div>
+
+  <section class="card">
+    <h2>➕ บันทึกบิล</h2>
+    <div class="form">
+      <input type="date" id="bDate">
+      <input id="bNo" placeholder="เลขบิล">
+      <input type="number" id="bAmt" placeholder="ยอดบิล (บาท)" min="0" inputmode="decimal">
+      <select id="bPlayer"></select>
+      <button class="btn" onclick="addBill()">เพิ่มบิล</button>
+    </div>
+    <p class="small" id="billHint"></p>
+  </section>
+
+  <div class="grid2">
+    <section class="card">
+      <h2>🧾 บิลล่าสุด</h2>
+      <select id="billFilter" onchange="renderBills()" style="margin-bottom:8px"></select>
+      <div class="list" id="bills"></div>
+    </section>
+    <section class="card">
+      <h2>🎲 ประวัติการทอย</h2>
+      <div class="list" id="rolls"></div>
+    </section>
+  </div>
+
+  <section class="card">
+    <h2>👥 ผู้เล่น</h2>
+    <div id="players"></div>
+    <div class="player-row" style="margin-top:14px">
+      <select id="newEmoji"></select>
+      <input id="newName" placeholder="ชื่อพนักงานใหม่">
+      <span></span>
+      <button class="btn" onclick="addPlayer()">เพิ่ม</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <details>
+      <summary>⚙️ ตั้งค่า & สำรองข้อมูล</summary>
+      <div class="form" style="margin-top:14px">
+        <label>ชื่อเกม<input id="setTitle"></label>
+        <label>วันเริ่มแข่ง<input type="date" id="setStart"></label>
+        <label>วันจบแข่ง<input type="date" id="setEnd"></label>
+        <label>บาทต่อ 1 แต้ม<input type="number" id="setBpp" min="1"></label>
+        <label>แต้มต่อการทอย 1 ครั้ง<input type="number" id="setPpr" min="1"></label>
+        <label>ขนาดกระดาน<select id="setSize"><option value="50">50 ช่อง</option><option value="100">100 ช่อง</option></select></label>
+      </div>
+      <p class="small">* การเปลี่ยนบาทต่อแต้มจะมีผลกับบิลใหม่เท่านั้น · เปลี่ยนขนาดกระดานได้เฉพาะตอนที่ยังไม่มีใครทอย</p>
+      <div class="btns">
+        <button class="btn" onclick="saveSettings()">💾 บันทึกการตั้งค่า</button>
+        <button class="btn ghost" onclick="exportData()">⬇️ ส่งออกข้อมูลสำรอง</button>
+        <label class="btn ghost" style="display:inline-block">⬆️ นำเข้าข้อมูล<input type="file" accept=".json" id="importFile" hidden></label>
+        <button class="btn gold" onclick="newRound()">🔄 เริ่มรอบเดือนใหม่ (เก็บรายชื่อ)</button>
+        <button class="btn danger" onclick="resetAll()">🗑️ ล้างข้อมูลทั้งหมด</button>
+      </div>
+    </details>
+  </section>
+</div>
+
+<div class="modal" id="modal">
+  <div class="modal-box">
+    <div style="font-size:1.4rem;font-weight:700" id="mName"></div>
+    <div class="small" id="mInfo"></div>
+    <div class="dice" id="dice"></div>
+    <div id="mResult"></div>
+    <div class="btns" style="justify-content:center">
+      <button class="btn gold" id="rollBtn" onclick="rollDice()">🎲 ทอยเลย!</button>
+      <button class="btn ghost" id="closeBtn" onclick="closeModal()">ปิด</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const KEY='yodpang_snake_ladder_v1';
+const EMOJIS=['🐱','🐰','🐻','🐥','🦊','🐶','🐼','🐨','🐯','🦁','🐸','🐵','🐷','🐮','🦄','🐙','🐧','🐳'];
+const COLORS=['#4cc9a6','#5b9bd5','#b57edc','#7cc142','#ff7a7a','#f4b942','#4fc3f7','#f06292','#bcaaa4','#90a4ae'];
+const ROW_COLORS=['#ffd6e0','#ffe4c4','#fff3b0','#d8f5c8','#c8f1ef','#d3e4ff','#e5d8ff','#ffd8f0','#ffe0cc','#dff7e3'];
+const SNAKE_COLORS=[['#7ed957','#3d8b27'],['#b388ff','#6a3fbf'],['#ffa94d','#c2621a'],['#ff7eb6','#b83c74'],['#4fc3f7','#1c78a8']];
+const MAPS={
+  50:{ladders:{3:22,8:26,11:28,20:29,27:41,36:45},snakes:{17:4,24:7,33:14,39:21,43:30,48:34}},
+  100:{ladders:{2:38,7:14,8:31,15:26,21:42,28:84,36:44,51:67,71:91,78:98,87:94},
+       snakes:{16:6,46:25,49:11,62:19,64:60,74:53,89:68,92:88,95:75,99:80}}
+};
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const money=n=>Number(n).toLocaleString('th-TH');
+const fmt=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const today=()=>fmt(new Date());
+const thDate=s=>s?new Date(s+'T00:00:00').toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'2-digit'}):'-';
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const rollD6=()=>{const a=new Uint32Array(1);crypto.getRandomValues(a);return 1+(a[0]%6)};
+
+function monthRange(){const d=new Date();return[fmt(new Date(d.getFullYear(),d.getMonth(),1)),fmt(new Date(d.getFullYear(),d.getMonth()+1,0))]}
+function defaultState(){
+  const [start,end]=monthRange();
+  const names=[['Cindy','🐱'],['Kwan','🐰'],['Neung','🐻'],['Tou','🐥'],['Pao','🦊']];
+  return{settings:{title:'ยอดปัง บันไดงู',bahtPerPoint:1000,pointsPerRoll:3,boardSize:100,start,end},
+    players:names.map((n,i)=>({id:uid(),name:n[0],emoji:n[1],color:COLORS[i],pos:0,spent:0,finishedAt:null})),
+    bills:[],rolls:[]};
+}
+function load(){try{const d=JSON.parse(localStorage.getItem(KEY));if(d&&Array.isArray(d.players))return d}catch(e){}return defaultState()}
+function save(){localStorage.setItem(KEY,JSON.stringify(S))}
+let S=load(),busy=false,rollPid=null,overlayKey=null;
+
+function stats(p){
+  const bills=S.bills.filter(b=>b.playerId===p.id);
+  const sales=bills.reduce((a,b)=>a+b.amount,0);
+  const points=bills.reduce((a,b)=>a+b.points,0);
+  const avail=points-p.spent;
+  return{sales,points,avail,rolls:Math.floor(avail/S.settings.pointsPerRoll)};
+}
+function ranked(){
+  return[...S.players].sort((a,b)=>(b.pos-a.pos)||((a.finishedAt??Infinity)-(b.finishedAt??Infinity))||(stats(b).sales-stats(a).sales));
+}
+function gameStatus(){const t=today(),{start,end}=S.settings;if(start&&t<start)return'before';if(end&&t>end)return'over';return'on'}
+function toast(msg,ms=2800){const t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),ms)}
+function burst(list){for(let i=0;i<26;i++){const s=document.createElement('span');s.className='confetti';s.textContent=list[i%list.length];
+  s.style.left=Math.random()*100+'vw';s.style.animationDelay=Math.random()*.6+'s';s.style.fontSize=(18+Math.random()*20)+'px';
+  document.body.appendChild(s);setTimeout(()=>s.remove(),3000)}}
+function shakeBoard(){const f=$('#boardFrame');f.classList.remove('shake');void f.offsetWidth;f.classList.add('shake')}
+
+/* ---------- Board ---------- */
+function cellNum(r,c,rows){const rfb=rows-1-r;return rfb*10+(rfb%2?10-c:c+1)}
+function cellRC(n,rows){const i=n-1,rfb=Math.floor(i/10),k=i%10;return{r:rows-1-rfb,c:rfb%2?9-k:k}}
+const tokK=n=>n<=1?.66:n===2?.44:n<=4?.42:.27;
+const f1=v=>v.toFixed(1);
+
+function ladderSVG([x1,y1],[x2,y2]){
+  const dx=x2-x1,dy=y2-y1,len=Math.hypot(dx,dy)||1,ux=dx/len,uy=dy/len,px=-uy,py=ux,w=16;
+  const ax=x1-ux*12,ay=y1-uy*12,bx=x2+ux*12,by=y2+uy*12,L=len+24;
+  const n=Math.max(2,Math.floor(L/34));let rungs='';
+  for(let i=1;i<n;i++){const t=i/n,cx=ax+(bx-ax)*t,cy=ay+(by-ay)*t;
+    rungs+=`M${f1(cx+px*w)} ${f1(cy+py*w)}L${f1(cx-px*w)} ${f1(cy-py*w)}`}
+  const rails=`M${f1(ax+px*w)} ${f1(ay+py*w)}L${f1(bx+px*w)} ${f1(by+py*w)}M${f1(ax-px*w)} ${f1(ay-py*w)}L${f1(bx-px*w)} ${f1(by-py*w)}`;
+  return`<g fill="none" stroke-linecap="round">
+    <path d="${rails}${rungs}" stroke="#7a4a1e" stroke-width="14"/>
+    <path d="${rungs}" stroke="#f0c17f" stroke-width="7"/>
+    <path d="${rails}" stroke="#d98c3e" stroke-width="8"/>
+    <path d="${rails}" stroke="#f6b973" stroke-width="2.5" transform="translate(-1.5,-1.5)"/></g>`;
+}
+function snakeSVG([hx,hy],[tx,ty],[col,dark]){
+  const dx=tx-hx,dy=ty-hy,len=Math.hypot(dx,dy)||1,ux=dx/len,uy=dy/len,px=-uy,py=ux;
+  const waves=Math.max(1,Math.round(len/170)),amp=Math.min(24,8+len*.06),N=Math.max(30,Math.round(len/5));
+  const pts=[];
+  for(let k=0;k<=N;k++){const t=k/N,o=Math.sin(t*Math.PI*2*waves)*amp;pts.push([hx+dx*t+px*o,hy+dy*t+py*o,15-9*t])}
+  let out='',body='',spots='';
+  pts.forEach(([x,y,r],k)=>{
+    out+=`<circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(r+3)}"/>`;
+    body+=`<circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(r)}"/>`;
+    if(k>6&&k%6===0)spots+=`<circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(r*.45)}"/>`;
+  });
+  let fx=pts[0][0]-pts[3][0],fy=pts[0][1]-pts[3][1];const fl=Math.hypot(fx,fy)||1;fx/=fl;fy/=fl;const gx=-fy,gy=fx;
+  const C=(f,g)=>[f1(hx+fx*f+gx*g),f1(hy+fy*f+gy*g)];
+  const P=(f,g)=>C(f,g).join(' ');
+  const circ=(f,g,r,attr)=>{const[x,y]=C(f,g);return`<circle cx="${x}" cy="${y}" r="${r}" ${attr}/>`};
+  return`<g>
+    <g fill="${dark}">${out}</g><g fill="${col}">${body}</g><g fill="#fff" opacity=".4">${spots}</g>
+    <path d="M${P(16,0)}L${P(33,0)}M${P(33,0)}L${P(39,-6)}M${P(33,0)}L${P(39,6)}" stroke="#ff4d6d" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+    ${circ(2,0,21,`fill="${col}" stroke="${dark}" stroke-width="3"`)}
+    ${circ(-3,-13,4.5,'fill="#ff8fab" opacity=".75"')}${circ(-3,13,4.5,'fill="#ff8fab" opacity=".75"')}
+    ${circ(6,-8,7,`fill="#fff" stroke="${dark}" stroke-width="2"`)}${circ(6,8,7,`fill="#fff" stroke="${dark}" stroke-width="2"`)}
+    ${circ(8,-8,3.8,'fill="#222"')}${circ(8,8,3.8,'fill="#222"')}
+    ${circ(9.5,-9.5,1.4,'fill="#fff"')}${circ(9.5,6.5,1.4,'fill="#fff"')}
+  </g>`;
+}
+function drawOverlay(size){
+  const rows=size/10,map=MAPS[size],svg=$('#overlay');
+  svg.setAttribute('viewBox',`0 0 1000 ${rows*100}`);
+  const pt=n=>{const{r,c}=cellRC(n,rows);return[(c+.5)*100,(r+.5)*100]};
+  let out='';
+  for(const[a,b]of Object.entries(map.ladders))out+=ladderSVG(pt(+a),pt(b));
+  Object.entries(map.snakes).forEach(([a,b],i)=>out+=snakeSVG(pt(+a),pt(b),SNAKE_COLORS[i%SNAKE_COLORS.length]));
+  svg.innerHTML=out;
+}
+function renderBoard(movingId){
+  const size=S.settings.boardSize,rows=size/10;
+  let html='';
+  for(let r=0;r<rows;r++)for(let c=0;c<10;c++){
+    const n=cellNum(r,c,rows),rfb=rows-1-r;
+    let cls='tile'+((r+c)%2?' lt':''),deco='';
+    if(n===size){cls+=' finish';deco='👑'}
+    const ps=S.players.filter(p=>p.pos===n);
+    const toks=ps.map(p=>`<span class="tok${p.id===movingId?' moving':''}" title="${esc(p.name)}" style="--c:${p.color}">${p.emoji}</span>`).join('');
+    html+=`<div class="cell"><div class="${cls}" style="--bg:${ROW_COLORS[rfb%10]}"><span class="num">${n}</span>${deco?`<span class="deco">${deco}</span>`:''}</div><div class="tokens" style="--k:${tokK(ps.length)}">${toks}</div></div>`;
+  }
+  $('#board').innerHTML=html;
+  if(overlayKey!==size){overlayKey=size;drawOverlay(size)}
+  const atStart=S.players.filter(p=>p.pos===0);
+  $('#startArea').innerHTML='🚩 จุดเริ่มต้น: '+(atStart.length?atStart.map(p=>`<span class="tok" title="${esc(p.name)}" style="--c:${p.color}">${p.emoji}</span>`).join(''):'ทุกคนออกเดินแล้ว! 🎉');
+}
+
+/* ---------- Header & ranking ---------- */
+function renderHeader(){
+  const st=S.settings;
+  $('#title').textContent=`🐍 ${st.title} 🪜`;document.title=st.title;
+  $('#subtitle').textContent=`ทุก ${money(st.bahtPerPoint)} บาท = 1 แต้ม · ครบ ${st.pointsPerRoll} แต้ม ทอยลูกเต๋า 1 ครั้ง · ใครไต่สูงสุดเมื่อจบเดือนคือผู้ชนะ 👑`;
+  const r=ranked(),top=r[0],status=gameStatus();
+  let txt;
+  if(!top)txt='เพิ่มผู้เล่นเพื่อเริ่มเกม';
+  else if(top.pos===0)txt='🎲 ยังไม่มีใครออกเดิน ทำยอดให้ครบแล้วมาทอยกันเลย!';
+  else txt=`${status==='over'?'🏆 ผู้ชนะ':'👑 ผู้นำตอนนี้'}: ${top.emoji} ${top.name} (ช่อง ${top.pos})`;
+  $('#leader').textContent=txt;
+  const total=S.bills.reduce((a,b)=>a+b.amount,0);
+  let left='';
+  if(status==='before')left='⏳ ยังไม่เริ่มแข่ง';
+  else if(status==='over')left='🏁 จบการแข่งขันแล้ว';
+  else if(st.end)left=`⏰ เหลืออีก <b>${Math.max(0,Math.ceil((new Date(st.end+'T23:59:59')-new Date())/86400000))}</b> วัน`;
+  $('#stats').innerHTML=`<span class="pill">📅 ${thDate(st.start)} – ${thDate(st.end)}</span>${left?`<span class="pill">${left}</span>`:''}<span class="pill">💰 ยอดรวมร้าน <b>${money(total)}</b> บาท</span><span class="pill">🎲 ทอยไปแล้ว <b>${S.rolls.length}</b> ครั้ง</span>`;
+}
+function renderRanking(){
+  const size=S.settings.boardSize,ppr=S.settings.pointsPerRoll,status=gameStatus(),medals=['🥇','🥈','🥉'];
+  const r=ranked();
+  $('#ranking').innerHTML=r.length?r.map((p,i)=>{
+    const s=stats(p),done=p.pos>=size;
+    const prog=s.rolls>0?100:((s.avail%ppr)/ppr*100);
+    let label,dis=true;
+    if(done)label='🏁 เข้าเส้นชัยแล้ว!';
+    else if(status==='before')label='⏳ ยังไม่เริ่มแข่ง';
+    else if(status==='over')label='จบเกมแล้ว';
+    else if(s.rolls<1)label=`สะสมอีก ${ppr-(s.avail%ppr)} แต้มเพื่อทอย`;
+    else{label=`🎲 ทอยลูกเต๋า (${s.rolls} ครั้ง)`;dis=busy}
+    return`<div class="rcard" style="background:${p.color}">
+      <div class="rname">${medals[i]||(i+1)+'.'} ${p.emoji} ${esc(p.name)}</div>
+      <div class="rpos">ช่อง ${p.pos}</div>
+      <div class="rsub">ยอดขาย ${money(s.sales)} บาท · แต้มรวม ${s.points} · แต้มคงเหลือ ${s.avail}</div>
+      <div class="bar"><i style="width:${prog}%"></i></div>
+      <button class="btn" ${dis?'disabled':''} onclick="openRoll('${p.id}')">${label}</button>
+    </div>`}).join(''):'<p class="small">ยังไม่มีผู้เล่น</p>';
+}
+
+/* ---------- Bills ---------- */
+function renderBillForm(){
+  const cur=$('#bPlayer').value,curF=$('#billFilter').value;
+  $('#bPlayer').innerHTML=S.players.map(p=>`<option value="${p.id}">${p.emoji} ${esc(p.name)}</option>`).join('');
+  if(S.players.some(p=>p.id===cur))$('#bPlayer').value=cur;
+  $('#billFilter').innerHTML='<option value="">ทุกคน</option>'+S.players.map(p=>`<option value="${p.id}">${p.emoji} ${esc(p.name)}</option>`).join('');
+  if(S.players.some(p=>p.id===curF))$('#billFilter').value=curF;
+  $('#billHint').textContent=`คิดแต้มต่อบิลแบบปัดเศษลง เช่น 2,345 บาท = ${Math.floor(2345/S.settings.bahtPerPoint)} แต้ม · เลขบิลซ้ำจะบันทึกไม่ได้`;
+}
+function addBill(){
+  const date=$('#bDate').value||today(),no=$('#bNo').value.trim(),amount=parseFloat($('#bAmt').value),pid=$('#bPlayer').value;
+  if(!pid)return toast('กรุณาเพิ่มผู้เล่นก่อน');
+  if(!no)return toast('กรุณากรอกเลขบิล');
+  if(!(amount>0))return toast('กรุณากรอกยอดบิลให้ถูกต้อง');
+  if(S.bills.some(b=>b.no.toLowerCase()===no.toLowerCase()))return toast('⚠️ เลขบิลนี้ถูกบันทึกไปแล้ว');
+  const p=S.players.find(x=>x.id===pid),before=stats(p).rolls;
+  const points=Math.floor(amount/S.settings.bahtPerPoint);
+  S.bills.push({id:uid(),date,no,amount,playerId:pid,points,ts:Date.now()});
+  save();$('#bNo').value='';$('#bAmt').value='';$('#bNo').focus();
+  const after=stats(p).rolls;render();
+  toast(after>before?`🎉 ${p.name} +${points} แต้ม ได้สิทธิ์ทอยลูกเต๋า ${after} ครั้ง!`:`✅ บันทึกแล้ว: ${p.name} +${points} แต้ม`);
+}
+function renderBills(){
+  const f=$('#billFilter').value;
+  const list=S.bills.filter(b=>!f||b.playerId===f).sort((a,b)=>b.date.localeCompare(a.date)||b.ts-a.ts);
+  $('#bills').innerHTML=list.length?list.map(b=>{const p=S.players.find(x=>x.id===b.playerId);if(!p)return'';
+    return`<div class="item"><span class="dot" style="background:${p.color}"></span><div class="grow">${p.emoji} ${esc(p.name)} · บิล ${esc(b.no)} · ${money(b.amount)} บาท <b>(+${b.points})</b><div class="small">${thDate(b.date)}</div></div><button class="btn ghost" onclick="deleteBill('${b.id}')">ลบ</button></div>`}).join(''):'<p class="small">ยังไม่มีบิล</p>';
+}
+function deleteBill(id){
+  const b=S.bills.find(x=>x.id===id),p=S.players.find(x=>x.id===b.playerId);
+  if(p&&stats(p).points-b.points<p.spent)return toast('ลบไม่ได้: แต้มจากบิลนี้ถูกใช้ทอยไปแล้ว ให้ยกเลิกการทอยล่าสุดก่อน',4000);
+  if(!confirm(`ลบบิล ${b.no} (${money(b.amount)} บาท)?`))return;
+  S.bills=S.bills.filter(x=>x.id!==id);save();render();
+}
+
+/* ---------- Rolls ---------- */
+function renderRolls(){
+  const list=[...S.rolls].sort((a,b)=>b.ts-a.ts);
+  const latest={};S.rolls.forEach(r=>{if(!latest[r.playerId]||r.ts>latest[r.playerId].ts)latest[r.playerId]=r});
+  $('#rolls').innerHTML=list.length?list.map(r=>{const p=S.players.find(x=>x.id===r.playerId);if(!p)return'';
+    const via=r.via==='ladder'?' 🪜 ขึ้นบันได!':r.via==='snake'?' 🐍 โดนงูกัด!':'';
+    const canUndo=latest[p.id]&&latest[p.id].id===r.id&&!busy;
+    return`<div class="item"><span class="dot" style="background:${p.color}"></span><div class="grow">${p.emoji} ${esc(p.name)} ทอยได้ <b>${r.dice}</b> · ช่อง ${r.from} → <b>${r.to}</b>${via}<div class="small">${new Date(r.ts).toLocaleString('th-TH',{dateStyle:'short',timeStyle:'short'})}</div></div>${canUndo?`<button class="btn ghost" onclick="undoRoll('${r.id}')">ยกเลิก</button>`:''}</div>`}).join(''):'<p class="small">ยังไม่มีการทอย</p>';
+}
+function undoRoll(id){
+  const r=S.rolls.find(x=>x.id===id),p=S.players.find(x=>x.id===r.playerId);
+  if(!confirm(`ยกเลิกการทอยของ ${p.name}?\nตัวหมากจะกลับไปช่อง ${r.from} และคืน ${r.cost} แต้ม`))return;
+  p.pos=r.from;p.spent-=r.cost;if(r.from<S.settings.boardSize)p.finishedAt=null;
+  S.rolls=S.rolls.filter(x=>x.id!==id);save();render();
+}
+function diceHTML(v){const on={1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]}[v];
+  return Array.from({length:9},(_,i)=>`<span class="${on.includes(i)?'on':''}"></span>`).join('')}
+function openRoll(pid){
+  if(busy)return;const p=S.players.find(x=>x.id===pid),s=stats(p);
+  if(s.rolls<1||p.pos>=S.settings.boardSize||gameStatus()!=='on')return;
+  rollPid=pid;
+  $('#mName').textContent=`${p.emoji} ${p.name}`;
+  $('#mInfo').textContent=`อยู่ช่อง ${p.pos} · ทอยได้อีก ${s.rolls} ครั้ง`;
+  $('#dice').innerHTML=diceHTML(1);$('#mResult').textContent='';
+  $('#rollBtn').disabled=false;$('#closeBtn').disabled=false;
+  $('#modal').classList.add('show');
+}
+function closeModal(){if(!busy)$('#modal').classList.remove('show')}
+async function rollDice(){
+  const p=S.players.find(x=>x.id===rollPid);if(!p||busy||stats(p).rolls<1)return;
+  busy=true;$('#rollBtn').disabled=true;$('#closeBtn').disabled=true;
+  const d=$('#dice');d.classList.add('spin');
+  for(let i=0;i<14;i++){d.innerHTML=diceHTML(1+Math.floor(Math.random()*6));await sleep(75)}
+  d.classList.remove('spin');
+  const v=rollD6();d.innerHTML=diceHTML(v);
+  $('#mResult').textContent=`ได้ ${v}! เดิน ${v} ช่อง`;
+  await sleep(1200);$('#modal').classList.remove('show');
+  await movePlayer(p,v);
+  busy=false;render();
+}
+async function movePlayer(p,v){
+  const size=S.settings.boardSize,map=MAPS[size],ppr=S.settings.pointsPerRoll,from=p.pos;
+  p.spent+=ppr;renderRanking();
+  $('#boardCard').scrollIntoView({behavior:'smooth',block:'center'});await sleep(400);
+  const target=Math.min(from+v,size);
+  for(let x=from+1;x<=target;x++){p.pos=x;renderBoard(p.id);await sleep(320)}
+  let via=null,final=target;
+  if(map.ladders[target]){via='ladder';final=map.ladders[target]}
+  else if(map.snakes[target]){via='snake';final=map.snakes[target]}
+  if(via==='ladder'){burst(['⭐','✨','🌟','🎉']);await sleep(500)}
+  if(via==='snake'){shakeBoard();await sleep(600)}
+  if(via){p.pos=final;renderBoard(p.id)}
+  if(final>=size&&!p.finishedAt)p.finishedAt=Date.now();
+  S.rolls.push({id:uid(),playerId:p.id,dice:v,from,to:final,via,cost:ppr,ts:Date.now()});save();
+  let msg=`${p.emoji} ${p.name} เดินไปช่อง ${target}`;
+  if(via==='ladder')msg=`🪜 เยี่ยม! ${p.name} ขึ้นบันได ${target} → ${final}`;
+  if(via==='snake')msg=`🐍 โอ๊ย! ${p.name} โดนงูกัด ${target} → ${final}`;
+  if(final>=size){msg=`🏁🎉 ${p.name} เข้าเส้นชัยแล้ว!`;burst(['🎉','🏆','🎊','👑','⭐'])}
+  toast(msg,4000);
+}
+
+/* ---------- Players ---------- */
+const emojiOpts=sel=>EMOJIS.map(e=>`<option ${e===sel?'selected':''}>${e}</option>`).join('');
+function renderPlayers(){
+  $('#players').innerHTML=S.players.map(p=>`<div class="player-row">
+    <select onchange="updPlayer('${p.id}','emoji',this.value)">${emojiOpts(p.emoji)}</select>
+    <input value="${esc(p.name)}" onchange="updPlayer('${p.id}','name',this.value)">
+    <input type="color" value="${p.color}" onchange="updPlayer('${p.id}','color',this.value)">
+    <button class="btn ghost" onclick="deletePlayer('${p.id}')">✕</button></div>`).join('');
+}
+function updPlayer(id,k,v){const p=S.players.find(x=>x.id===id);v=String(v).trim();if(!v)return render();p[k]=v;save();render()}
+function addPlayer(){
+  const name=$('#newName').value.trim();if(!name)return toast('กรุณาใส่ชื่อผู้เล่น');
+  S.players.push({id:uid(),name,emoji:$('#newEmoji').value,color:COLORS[S.players.length%COLORS.length],pos:0,spent:0,finishedAt:null});
+  $('#newName').value='';save();render();toast(`เพิ่ม ${name} แล้ว`);
+}
+function deletePlayer(id){
+  const p=S.players.find(x=>x.id===id);
+  if(!confirm(`ลบ ${p.name}? บิลและประวัติการทอยของคนนี้จะถูกลบด้วย`))return;
+  S.players=S.players.filter(x=>x.id!==id);S.bills=S.bills.filter(b=>b.playerId!==id);S.rolls=S.rolls.filter(r=>r.playerId!==id);
+  save();render();
+}
+
+/* ---------- Settings ---------- */
+function renderSettings(){const s=S.settings;$('#setTitle').value=s.title;$('#setStart').value=s.start;$('#setEnd').value=s.end;$('#setBpp').value=s.bahtPerPoint;$('#setPpr').value=s.pointsPerRoll;$('#setSize').value=s.boardSize}
+function saveSettings(){
+  const bpp=parseInt($('#setBpp').value),ppr=parseInt($('#setPpr').value),size=parseInt($('#setSize').value);
+  if(!(bpp>0)||!(ppr>0))return toast('ตัวเลขการตั้งค่าไม่ถูกต้อง');
+  if(size!==S.settings.boardSize&&S.rolls.length)return toast('เปลี่ยนขนาดกระดานไม่ได้ เพราะเริ่มทอยไปแล้ว',3500);
+  if($('#setStart').value&&$('#setEnd').value&&$('#setStart').value>$('#setEnd').value)return toast('วันจบต้องอยู่หลังวันเริ่ม');
+  if(ppr!==S.settings.pointsPerRoll&&S.rolls.length&&!confirm('เปลี่ยนแต้มต่อการทอยระหว่างเกม จะมีผลกับการทอยครั้งถัดไป ยืนยัน?'))return;
+  Object.assign(S.settings,{title:$('#setTitle').value.trim()||'ยอดปัง บันไดงู',start:$('#setStart').value,end:$('#setEnd').value,bahtPerPoint:bpp,pointsPerRoll:ppr,boardSize:size});
+  save();render();toast('💾 บันทึกการตั้งค่าแล้ว');
+}
+function exportData(){
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(S,null,2)],{type:'application/json'}));
+  a.download=`snake-ladder-backup-${today()}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+$('#importFile').addEventListener('change',e=>{
+  const f=e.target.files[0];if(!f)return;const rd=new FileReader();
+  rd.onload=()=>{try{const d=JSON.parse(rd.result);
+    if(!d.settings||!Array.isArray(d.players)||!Array.isArray(d.bills)||!Array.isArray(d.rolls))throw 0;
+    if(!confirm('นำเข้าข้อมูลจะเขียนทับข้อมูลปัจจุบัน ยืนยัน?'))return;
+    S=d;overlayKey=null;save();renderSettings();render();toast('✅ นำเข้าข้อมูลสำเร็จ');
+  }catch(err){toast('ไฟล์ไม่ถูกต้อง')}e.target.value=''};
+  rd.readAsText(f);
+});
+function newRound(){
+  if(!confirm('เริ่มรอบใหม่? บิลและการทอยทั้งหมดจะถูกล้าง (เก็บรายชื่อผู้เล่นไว้)\nแนะนำให้ส่งออกข้อมูลสำรองก่อน'))return;
+  const[start,end]=monthRange();
+  S.bills=[];S.rolls=[];S.players.forEach(p=>{p.pos=0;p.spent=0;p.finishedAt=null});
+  S.settings.start=start;S.settings.end=end;save();renderSettings();render();toast('🔄 เริ่มรอบใหม่แล้ว!');
+}
+function resetAll(){if(!confirm('ล้างข้อมูลทั้งหมด รวมรายชื่อผู้เล่น?'))return;S=defaultState();overlayKey=null;save();renderSettings();render()}
+
+/* ---------- Init ---------- */
+function render(){renderHeader();renderBoard();renderRanking();renderBillForm();renderBills();renderRolls();renderPlayers()}
+$('#newEmoji').innerHTML=emojiOpts('🐶');
+$('#bDate').value=today();
+$('#bAmt').addEventListener('keydown',e=>{if(e.key==='Enter')addBill()});
+renderSettings();render();
+</script>
+</body>
+</html>
